@@ -15,11 +15,12 @@ class RestrictionService:
 
     @staticmethod
     def __calculate_attribute_score(value_count_mapping: List[int]) -> float:
-        # 0.3 x 7 + 0.7 3  = 2,1
-        # 0.3 x 7 + 0.3 x 3 + 0.4 x 6 /3 = 2.2
-        # 0.1 x 9 + 0.1 x 9 + 0.8 x 2 /3 = 3.4 /3 = 1.13
-        return float(std(value_count_mapping)) / len(value_count_mapping)
-
+        if len(value_count_mapping) == 1:
+            return 0.0
+        _sum = 0
+        for count in value_count_mapping:
+            _sum += (count /sum(value_count_mapping)) * (sum(value_count_mapping) - count)
+        return _sum / len(value_count_mapping)
     def get_restriction(self, attributes: Dict[str, str]) -> RestrictionModel:
 
         item_subset, next_best_attribute, is_using_other_attributes = self.get_item_subset_and_next_best_attribute(
@@ -158,8 +159,8 @@ class RestrictionService:
                 pass
 
         if len(attribute_scores) == 0:
-            return item_subset, None, False
+                return item_subset, None, False
 
-        best_attribute_choice = sorted(attribute_scores.items(), key=lambda x: x[1])[0][0]
+        best_attribute_choice = sorted(attribute_scores.items(), key=lambda x: x[1], reverse=True)[0][0]
 
         return item_subset, best_attribute_choice, is_using_other_attributes
