@@ -14,8 +14,8 @@ class RestrictionService:
         self.language = language
 
     @staticmethod
-    def __calculate_attribute_score(value_count_mapping: Dict[str, int]) -> float:
-        return float(std(list(value_count_mapping.values()))) / len(value_count_mapping.values())
+    def __calculate_attribute_score(value_count_mapping: List[int]) -> float:
+        return float(std(value_count_mapping)) / len(value_count_mapping)
 
     def get_restriction(self, attributes: Dict[str, str]) -> RestrictionModel:
 
@@ -137,7 +137,7 @@ class RestrictionService:
         if is_using_other_attributes:
             potential_attributes = other_attributes
 
-        attribute_value_count_mapping = {attr: defaultdict(int) for attr in potential_attributes}
+        attribute_value_count_mapping: Dict[str, Dict[str, int]] = {attr: defaultdict(int) for attr in potential_attributes}
 
         for attr in potential_attributes:
             for item in item_subset:
@@ -149,7 +149,8 @@ class RestrictionService:
         attribute_scores: Dict[str, float] = {}
         for attr, value_count in attribute_value_count_mapping.items():
             try:
-                attribute_scores[attr] = self.__calculate_attribute_score(value_count)
+                value_counts = list(value_count.values())
+                attribute_scores[attr] = self.__calculate_attribute_score(value_counts)
             except ZeroDivisionError:
                 pass
 
