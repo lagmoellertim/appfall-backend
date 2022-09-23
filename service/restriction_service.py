@@ -1,4 +1,4 @@
-import math
+from numpy import std
 from collections import defaultdict
 from select import poll
 from typing import Mapping, Any, Dict, Set, Union, Optional, Tuple, List
@@ -16,7 +16,7 @@ class RestrictionService:
 
     @staticmethod
     def __calculate_attribute_score(value_count_mapping: Dict[str, int]) -> float:
-        return sum(value_count_mapping.values()) / len(value_count_mapping.values())
+        return float(std(value_count_mapping.values())) / len(value_count_mapping.values())
 
     def get_restriction(self, attributes: Dict[str, str]) -> RestrictionModel:
 
