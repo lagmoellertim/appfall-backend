@@ -1,4 +1,4 @@
-from typing import Union, List, Optional, Tuple
+from typing import Union, List, Optional, Tuple, Dict
 
 from pydantic import BaseModel
 
@@ -44,17 +44,24 @@ class DisposalSiteModel(BaseModel):
     tags: List[str]
 
 
+class DisposalItemComponentModel(BaseModel):
+    name: str
+    bin: str
+
+
 class DisposalItemModel(BaseModel):
     id: str
     name: str
-    tags: List[str]
+    components: List[DisposalItemComponentModel]
+    info_text: Optional[str]
+    attributes: Dict[str, str]
 
 
 class EventModel(BaseModel):
     id: str
     name: str
     timestamp: int
-    location: Union[LocationModel, str]
+    location: str
 
 
 class QueryResultModel(BaseModel):

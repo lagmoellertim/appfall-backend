@@ -6,6 +6,7 @@ from pymongo import MongoClient
 from pymongo.database import Database
 from starlette.requests import Request
 
+from service.disposal_item_service import DisposalItemService
 from service.restriction_service import RestrictionService
 from view_models import DisposalSiteModel, DisposalItemModel, EventModel, QueryResultModel
 
@@ -56,8 +57,13 @@ async def get_disposal_sites(long: Union[float, None] = None, lat: Union[float, 
 
 
 @app.get("/disposal_items/{item_id}", response_model=DisposalItemModel)
-async def get_disposal_item(item_id: str):
-    return {}
+async def get_disposal_item(request: Request, item_id: str):
+    language = extract_language_from_header(request)
+
+    if item_id is None or item_id == "":
+        raise ValueError("No item id was supplied")
+
+    return DisposalItemService(app.db, language).get_item(item_id)
 
 
 @app.get("/events", response_model=List[EventModel])
