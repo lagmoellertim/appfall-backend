@@ -1,3 +1,4 @@
+import os
 from typing import List, Union, Dict, Mapping, Any
 
 from fastapi import FastAPI, Query
@@ -16,10 +17,15 @@ def extract_language_from_header(request: Request):
     try:
         language = request.headers["Accept-Language"]
         return language.split("-")[0].split(",")[0].split(";")[0]
-    except IndexError:
+    except Exception:
         return "en"
 
-connection_string = "mongodb://root:example@localhost"
+
+mongo_user = os.environ.get("DB_USER") or "root"
+mongo_pass = os.environ.get("DB_PASS") or "example"
+mongo_host = os.environ.get("DB_HOST") or "localhost"
+connection_string = f"mongodb://{mongo_user}:{mongo_pass}@{mongo_host}"
+
 
 @app.on_event("startup")
 def startup_db_client():
@@ -28,9 +34,11 @@ def startup_db_client():
 
     print("Connected to the MongoDB database!")
 
+
 @app.on_event("shutdown")
 def shutdown_db_client():
     app.db.close()
+
 
 @app.get("/restriction")
 async def get_restriction(request: Request):

@@ -1,7 +1,6 @@
 from numpy import std
 from collections import defaultdict
-from select import poll
-from typing import Mapping, Any, Dict, Set, Union, Optional, Tuple, List
+from typing import Mapping, Any, Dict, Set, Optional, Tuple, List
 
 from pymongo.database import Database
 
@@ -16,11 +15,12 @@ class RestrictionService:
 
     @staticmethod
     def __calculate_attribute_score(value_count_mapping: Dict[str, int]) -> float:
-        return float(std(value_count_mapping.values())) / len(value_count_mapping.values())
+        return float(std(list(value_count_mapping.values()))) / len(value_count_mapping.values())
 
     def get_restriction(self, attributes: Dict[str, str]) -> RestrictionModel:
 
-        item_subset, next_best_attribute, is_using_other_attributes = self.get_item_subset_and_next_best_attribute(attributes)
+        item_subset, next_best_attribute, is_using_other_attributes = self.get_item_subset_and_next_best_attribute(
+            attributes)
 
         model = RestrictionModel(
             possible_disposal_items=self.get_restriction_disposable_item_model(item_subset)
