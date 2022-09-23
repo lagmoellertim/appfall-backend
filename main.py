@@ -9,9 +9,20 @@ from starlette.requests import Request
 from service.disposal_item_service import DisposalItemService
 from service.restriction_service import RestrictionService
 from view_models import DisposalSiteModel, DisposalItemModel, EventModel, QueryResultModel
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 app.db: Database[Mapping[str, Any]]
+
+origins = ["*"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 def extract_language_from_header(request: Request):
