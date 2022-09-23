@@ -2,7 +2,6 @@
 version: '3.1'
 
 services:
-
   mongo:
     image: mongo
     restart: always
@@ -13,3 +12,9 @@ services:
       - ./persistent_data/mongo/:/data/db
     ports:
       - "27017:27017"
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8000"
