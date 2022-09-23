@@ -15,6 +15,9 @@ class RestrictionService:
 
     @staticmethod
     def __calculate_attribute_score(value_count_mapping: List[int]) -> float:
+        # 0.3 x 7 + 0.7 3  = 2,1
+        # 0.3 x 7 + 0.3 x 3 + 0.4 x 6 /3 = 2.2
+        # 0.1 x 9 + 0.1 x 9 + 0.8 x 2 /3 = 3.4 /3 = 1.13
         return float(std(value_count_mapping)) / len(value_count_mapping)
 
     def get_restriction(self, attributes: Dict[str, str]) -> RestrictionModel:
