@@ -8,6 +8,22 @@ class LocationModel(BaseModel):
     lat: float
 
 
+class AnswerModel(BaseModel):
+    answer_text: str
+    attribute_value: str
+
+
+class QuestionModel(BaseModel):
+    question_text: str
+    attribute_key: str
+    answers: List[AnswerModel]
+
+
+class RestrictionModel(BaseModel):
+    question: Union[QuestionModel, None]
+    possible_disposal_items: List[str]
+
+
 class DisposalSiteModel(BaseModel):
     id: str
     name: str
@@ -30,6 +46,6 @@ class EventModel(BaseModel):
 
 
 class QueryResultModel(BaseModel):
-    id: str
-    name: str
+    detection_result_text: str
+    attribute_value: str
     confidence: float

@@ -1,20 +1,43 @@
-from typing import List, Union
+from typing import List, Union, Dict, Mapping, Any
 
 from fastapi import FastAPI, Query
+from pymongo import MongoClient
+from pymongo.database import Database
+from starlette.requests import Request
 
+from service.restriction_service import RestrictionService
 from view_models import DisposalSiteModel, DisposalItemModel, EventModel, QueryResultModel
 
 app = FastAPI()
+app.db: Database[Mapping[str, Any]]
 
 
-@app.get("/decision_tree")
-async def get_decision_tree():
-    return {"message": "Hello World"}
+
+connection_string = "mongodb://root:example@localhost"
+
+@app.on_event("startup")
+def startup_db_client():
+    app.mongodb_client = MongoClient(connection_string)
+    app.db = app.mongodb_client["appfall"]
+
+    print("Connected to the MongoDB database!")
+
+@app.on_event("shutdown")
+def shutdown_db_client():
+    app.db.close()
+
+
+@app.get("/restriction")
+async def get_restriction(request: Request):
+    attributes: Dict[str, str] = dict(request.query_params)
+
+    return RestrictionService(app.db).get_restriction(attributes)
 
 
 @app.get("/disposal_sites", response_model=List[DisposalSiteModel])
 async def get_disposal_sites(long: Union[float, None] = None, lat: Union[float, None] = None,
-                             radius: Union[int, None] = None, tags: Union[List[str], None] = Query(None)):
+                             radius: Union[int, None] = None,
+                             tags: Union[List[str], None] = Query(None)):
     return {}
 
 
