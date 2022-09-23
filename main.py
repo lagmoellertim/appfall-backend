@@ -12,6 +12,12 @@ app = FastAPI()
 app.db: Database[Mapping[str, Any]]
 
 
+def extract_language_from_header(request: Request):
+    try:
+        language = request.headers["Accept-Language"]
+        return language.split("-")[0].split(",")[0].split(";")[0]
+    except IndexError:
+        return "en"
 
 connection_string = "mongodb://root:example@localhost"
 
@@ -26,12 +32,12 @@ def startup_db_client():
 def shutdown_db_client():
     app.db.close()
 
-
 @app.get("/restriction")
 async def get_restriction(request: Request):
+    language = extract_language_from_header(request)
     attributes: Dict[str, str] = dict(request.query_params)
 
-    return RestrictionService(app.db).get_restriction(attributes)
+    return RestrictionService(app.db, language).get_restriction(attributes)
 
 
 @app.get("/disposal_sites", response_model=List[DisposalSiteModel])

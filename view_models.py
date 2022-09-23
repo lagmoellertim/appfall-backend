@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -11,6 +11,7 @@ class LocationModel(BaseModel):
 class AnswerModel(BaseModel):
     answer_text: str
     attribute_value: str
+    metadata: str
 
 
 class QuestionModel(BaseModel):
@@ -19,9 +20,20 @@ class QuestionModel(BaseModel):
     answers: List[AnswerModel]
 
 
+class AdditionalAttributeModel(BaseModel):
+    key: str
+    value: str
+
+
+class RestrictionDisposableItemModel(BaseModel):
+    name: str
+    id: Optional[str]
+    additional_attribute: Optional[AdditionalAttributeModel]
+
+
 class RestrictionModel(BaseModel):
     question: Union[QuestionModel, None]
-    possible_disposal_items: List[str]
+    possible_disposal_items: List[RestrictionDisposableItemModel]
 
 
 class DisposalSiteModel(BaseModel):
