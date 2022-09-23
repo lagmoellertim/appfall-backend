@@ -1,6 +1,6 @@
 from typing import List, Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 
 from view_models import DisposalSiteModel, DisposalItemModel, EventModel, QueryResultModel
 
@@ -14,7 +14,7 @@ async def get_decision_tree():
 
 @app.get("/disposal_sites", response_model=List[DisposalSiteModel])
 async def get_disposal_sites(long: Union[float, None] = None, lat: Union[float, None] = None,
-                             radius: Union[int, None] = None, tags: Union[List[str], None] = None):
+                             radius: Union[int, None] = None, tags: Union[List[str], None] = Query(None)):
     return {}
 
 
