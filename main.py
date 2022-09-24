@@ -84,7 +84,7 @@ async def get_restriction(request: Request):
 async def get_disposal_sites(request: Request, long: Union[float, None] = None,
                              lat: Union[float, None] = None,
                              radius: Union[int, None] = None,
-                             bins: Union[List[str], None] = Query()):
+                             bins: Union[List[str], None] = Query(None)):
     language = extract_language_from_header(request)
 
     return DisposalSiteService(app.db, language).find_disposal_sites(long, lat, radius, bins)
