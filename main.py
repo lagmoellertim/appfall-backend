@@ -59,10 +59,10 @@ def startup_db_client():
     app.db = app.mongodb_client["appfall"]
     app.db["disposal_sites"].create_index([("location", pymongo.GEOSPHERE)])
     if os.environ.get("LOAD_AI") == "true":
-        app.model = pt_multilingual_clip.MultilingualCLIP.from_pretrained(model_name,
-                                                                          cache_dir="clip")
-        app.clip_model, app.clip_preprocess = clip.load(clip_model_name, device="cpu",
-                                                        download_root="clip")
+        app.model = pt_multilingual_clip.MultilingualCLIP.from_pretrained(model_name #cache_dir="clip"
+                                                                          )
+        app.clip_model, app.clip_preprocess = clip.load(clip_model_name, device="cpu" #download_root="clip"
+                                                        )
         app.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
 
 

@@ -20,6 +20,6 @@ services:
       - DB_HOST=appfall-backend-mongo-1
       - LOAD_AI=true
     volumes:
-      - ./persistent_data/backend/:/app/clip/
+      - ./persistent_data/backend2/:/root/.cache/
     ports:
       - "8001:8000"

@@ -2,8 +2,6 @@ import base64
 
 import numpy
 import numpy as np
-import torch
-from numpy import std
 from collections import defaultdict
 from typing import Mapping, Any, Dict, Set, Optional, Tuple, List
 
@@ -59,7 +57,7 @@ class RestrictionService:
 
         result: List[RestrictionDisposableItemModel] = []
 
-        for key, ids in list(item_mapping.items())[:10]:
+        for key, ids in list(item_mapping.items()):
             model = RestrictionDisposableItemModel(name=key)
 
             if len(ids) == 1:
@@ -122,7 +120,7 @@ class RestrictionService:
         if hash_from_image:
             min_score = 0.3
 
-        return [item_subset[i] for i, sim in filtered_item_set[:10] if sim > min_score]
+        return [item_subset[i] for i, sim in filtered_item_set if sim > min_score]
 
     def get_item_subset_and_next_best_attribute(
             self,
