@@ -1,9 +1,12 @@
 import io
 import os
+import pickle
 from typing import List, Union, Dict, Mapping, Any
 
+import numpy
 import pymongo
-
+from bson import ObjectId
+from bson.binary import Binary
 import clip
 import transformers
 from PIL import Image
@@ -58,12 +61,30 @@ def startup_db_client():
     app.mongodb_client = MongoClient(connection_string)
     app.db = app.mongodb_client["appfall"]
     app.db["disposal_sites"].create_index([("location", pymongo.GEOSPHERE)])
-    if os.environ.get("LOAD_AI") == "true":
-        app.model = pt_multilingual_clip.MultilingualCLIP.from_pretrained(model_name #cache_dir="clip"
+    if os.environ.get("LOAD_AI") == "true" or True:
+        app.model = pt_multilingual_clip.MultilingualCLIP.from_pretrained(model_name
+                                                                          ,
+                                                                          cache_dir="persistent/backend2/huggingface"
                                                                           )
-        app.clip_model, app.clip_preprocess = clip.load(clip_model_name, device="cpu" #download_root="clip"
+        app.clip_model, app.clip_preprocess = clip.load(clip_model_name, device="cpu"
+                                                        , download_root="persistent/backend2/clip"
                                                         )
         app.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
+
+        x = app.db["disposal_items"].find({"ai_hash": {"$exists": False}})
+        x = list(x)
+
+        if len(x) > 0:
+            texts = [item["name"]["en"] for item in x]
+            embeddings = app.model.forward(texts, app.tokenizer)
+            np_text_embeddings: numpy.ndarray = embeddings.detach().numpy()
+
+            for item, ai_hash in zip(x, np_text_embeddings):
+                pickled = Binary(pickle.dumps(ai_hash, protocol=2))
+                print(item)
+                app.db["disposal_items"].update_one({"_id": item['_id']}, {"$set": {
+                    "ai_hash": pickled}})
+            print(x)
 
 
 @app.on_event("shutdown")

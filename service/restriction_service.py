@@ -1,4 +1,5 @@
 import base64
+import pickle
 
 import numpy
 import numpy as np
@@ -100,16 +101,15 @@ class RestrictionService:
         )
 
     def get_ai_filtered_subset(self, ai_attribute_value, item_subset, hash_from_image) -> List[Any]:
-        texts = [item["name"][self.language] for item in item_subset]
-        embeddings = self.model.forward(texts, self.tokenizer)
-        np_text_embeddings: numpy.ndarray = embeddings.detach().numpy()
-
         decoded_bytes = base64.decodebytes(ai_attribute_value.encode("utf-8"))
         np_embedding: np.ndarray = np.frombuffer(decoded_bytes, dtype=np.float32).reshape([512])
         np_embedding = np_embedding / np.linalg.norm(np_embedding, axis=-1, keepdims=True)
 
         filtered_item_set = []
-        for (i, embedding) in enumerate(np_text_embeddings):
+        for (i, item) in enumerate(item_subset):
+            if "ai_hash" not in item:
+                continue
+            embedding = pickle.loads(item["ai_hash"])
             embedding = embedding / np.linalg.norm(embedding, axis=-1, keepdims=True)
             similarity = np_embedding @ embedding.T
 
