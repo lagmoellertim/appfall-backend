@@ -15,10 +15,8 @@ class DisposalSiteService:
 
     def find_disposal_sites(self, long: Union[float, None] = None, lat: Union[float, None] = None,
                             radius: Union[int, None] = None,
-                            bin: Union[str, None] = None) -> List[DisposalSiteModel]:
+                            bins: Union[List[str], None] = None) -> List[DisposalSiteModel]:
         aggregation = []
-
-        print(type(long), lat, radius, bin)
 
         if long is not None and lat is not None:
             innerFilter = {
@@ -31,9 +29,9 @@ class DisposalSiteService:
 
             aggregation.append({"$geoNear": innerFilter})
 
-        if bin is not None:
+        if bins is not None and len(bins) > 0:
             aggregation.append(
-                {"$match": {"bins": {"$in": [bin]}}}
+                {"$match": {"bins": {"$in": bins}}}
             )
 
         models = []
@@ -51,7 +49,5 @@ class DisposalSiteService:
                 model.distance = item["distance"]
 
             models.append(model)
-
-            print(item)
 
         return models

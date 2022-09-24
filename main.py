@@ -28,7 +28,6 @@ app.db: Database[Mapping[str, Any]]
 model_name = 'M-CLIP/XLM-Roberta-Large-Vit-B-32'
 clip_model_name = "ViT-B/32"
 
-
 origins = ["*"]
 
 app.add_middleware(
@@ -60,11 +59,11 @@ def startup_db_client():
     app.db = app.mongodb_client["appfall"]
     app.db["disposal_sites"].create_index([("location", pymongo.GEOSPHERE)])
     if os.environ.get("LOAD_AI") == "true":
-        app.model = pt_multilingual_clip.MultilingualCLIP.from_pretrained(model_name, cache_dir="clip")
-        app.clip_model, app.clip_preprocess = clip.load(clip_model_name, device="cpu", download_root="clip")
+        app.model = pt_multilingual_clip.MultilingualCLIP.from_pretrained(model_name,
+                                                                          cache_dir="clip")
+        app.clip_model, app.clip_preprocess = clip.load(clip_model_name, device="cpu",
+                                                        download_root="clip")
         app.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
-
-    print("Connected to the MongoDB database!")
 
 
 @app.on_event("shutdown")
@@ -77,16 +76,18 @@ async def get_restriction(request: Request):
     language = extract_language_from_header(request)
     attributes: Dict[str, str] = dict(request.query_params)
 
-    return RestrictionService(app.db, language, app.model, app.clip_model, app.tokenizer).get_restriction(attributes)
+    return RestrictionService(app.db, language, app.model, app.clip_model,
+                              app.tokenizer).get_restriction(attributes)
 
 
 @app.get("/disposal_sites", response_model=List[DisposalSiteModel])
-async def get_disposal_sites(request: Request, long: Union[float, None] = None, lat: Union[float, None] = None,
+async def get_disposal_sites(request: Request, long: Union[float, None] = None,
+                             lat: Union[float, None] = None,
                              radius: Union[int, None] = None,
-                             bin: Union[str, None] = None):
+                             bins: Union[List[str], None] = Query()):
     language = extract_language_from_header(request)
 
-    return DisposalSiteService(app.db, language).find_disposal_sites(long, lat, radius, bin)
+    return DisposalSiteService(app.db, language).find_disposal_sites(long, lat, radius, bins)
 
 
 @app.get("/disposal_items/{item_id}", response_model=DisposalItemModel)
@@ -101,9 +102,8 @@ async def get_disposal_item(request: Request, item_id: str):
 
 @app.get("/events", response_model=List[EventModel])
 async def get_events(
-        long: Union[float, None] = None,
-        lat: Union[float, None] = None,
-        radius: Union[int, None] = None,
+        street: Union[str, None] = None,
+        zip: Union[int, None] = None,
         timestamp_from: Union[int, None] = None,
         timestamp_to: Union[int, None] = None):
     return {}
@@ -128,7 +128,8 @@ async def query_search(q: str = None):
 @app.post("/search/image", response_model=AdditionalAttributeModel)
 async def image_search(file: UploadFile):
     request_object_content = await file.read()
-    image = app.clip_preprocess(Image.open(io.BytesIO(request_object_content))).unsqueeze(0).to("cpu")
+    image = app.clip_preprocess(Image.open(io.BytesIO(request_object_content))).unsqueeze(0).to(
+        "cpu")
     image_features = app.clip_model.encode_image(image)[0].detach().numpy()
 
     print(image_features)

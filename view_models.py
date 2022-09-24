@@ -45,7 +45,7 @@ class DisposalSiteModel(BaseModel):
 
 class DisposalItemComponentModel(BaseModel):
     name: str
-    bin: str
+    bins: List[str]
 
 
 class DisposalItemModel(BaseModel):

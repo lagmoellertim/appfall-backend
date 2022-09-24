@@ -21,7 +21,7 @@ class DisposalItemService:
         for component in item["components"]:
             component_models.append(DisposalItemComponentModel(
                 name=component["name"][self.language],
-                bin=component["bin"]
+                bins=component["bins"]
             ))
 
         model = DisposalItemModel(

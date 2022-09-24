@@ -120,7 +120,7 @@ class RestrictionService:
 
         min_score = 0.8
         if hash_from_image:
-            min_score = 0.5
+            min_score = 0.3
 
         return [item_subset[i] for i, sim in filtered_item_set[:10] if sim > min_score]
 
