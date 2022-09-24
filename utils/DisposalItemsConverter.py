@@ -26,7 +26,7 @@ with open('items.csv') as csv_file:
     for row in csv_reader:
         names = {}
         attributes = {}
-        components = {}
+        components = []
 
         names['de'] = row[0]
         names['en'] = row[1]
@@ -40,8 +40,13 @@ with open('items.csv') as csv_file:
                 continue
             attributes[attr_names[index]] = attr
 
-        components['de'] = "Alles"
-        components['en'] = "all"
+        components.append({
+            'name': {
+                'de': 'Alles',
+                'en': 'all'
+            },
+            'bin': row[12]
+        })
 
         mycol.insert_one({
             "name": names,
