@@ -37,11 +37,10 @@ class RestrictionModel(BaseModel):
 
 
 class DisposalSiteModel(BaseModel):
-    id: str
-    name: str
-    info: str
     location: LocationModel
-    tags: List[str]
+    address: str
+    bins: List[str]
+    distance: Optional[float]
 
 
 class DisposalItemComponentModel(BaseModel):

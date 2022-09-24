@@ -4,3 +4,7 @@ starlette~=0.20.4
 pydantic~=1.10.2
 uvicorn
 numpy
+git+https://github.com/openai/CLIP.git
+multilingual-clip
+torch
+python-multipart

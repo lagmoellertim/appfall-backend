@@ -1,3 +1,8 @@
+import base64
+
+import numpy
+import numpy as np
+import torch
 from numpy import std
 from collections import defaultdict
 from typing import Mapping, Any, Dict, Set, Optional, Tuple, List
@@ -9,9 +14,13 @@ from view_models import RestrictionModel, QuestionModel, AnswerModel, \
 
 
 class RestrictionService:
-    def __init__(self, db: Database[Mapping[str, Any]], language: str):
+    def __init__(self, db: Database[Mapping[str, Any]], language: str, model, clip_model,
+                 tokenizer):
         self.db = db
         self.language = language
+        self.model = model
+        self.clip_model = clip_model
+        self.tokenizer = tokenizer
 
     @staticmethod
     def __calculate_attribute_score(value_count_mapping: List[int]) -> float:
@@ -19,8 +28,9 @@ class RestrictionService:
             return 0.0
         _sum = 0
         for count in value_count_mapping:
-            _sum += (count /sum(value_count_mapping)) * (sum(value_count_mapping) - count)
+            _sum += (count / sum(value_count_mapping)) * (sum(value_count_mapping) - count)
         return _sum / len(value_count_mapping)
+
     def get_restriction(self, attributes: Dict[str, str]) -> RestrictionModel:
 
         item_subset, next_best_attribute, is_using_other_attributes = self.get_item_subset_and_next_best_attribute(
@@ -91,6 +101,29 @@ class RestrictionService:
             answers=answers
         )
 
+    def get_ai_filtered_subset(self, ai_attribute_value, item_subset, hash_from_image) -> List[Any]:
+        texts = [item["name"][self.language] for item in item_subset]
+        embeddings = self.model.forward(texts, self.tokenizer)
+        np_text_embeddings: numpy.ndarray = embeddings.detach().numpy()
+
+        decoded_bytes = base64.decodebytes(ai_attribute_value.encode("utf-8"))
+        np_embedding: np.ndarray = np.frombuffer(decoded_bytes, dtype=np.float32).reshape([512])
+        np_embedding = np_embedding / np.linalg.norm(np_embedding, axis=-1, keepdims=True)
+
+        filtered_item_set = []
+        for (i, embedding) in enumerate(np_text_embeddings):
+            embedding = embedding / np.linalg.norm(embedding, axis=-1, keepdims=True)
+            similarity = np_embedding @ embedding.T
+
+            filtered_item_set.append((i, similarity))
+        filtered_item_set.sort(key=lambda x: x[1], reverse=True)
+
+        min_score = 0.8
+        if hash_from_image:
+            min_score = 0.5
+
+        return [item_subset[i] for i, sim in filtered_item_set[:10] if sim > min_score]
+
     def get_item_subset_and_next_best_attribute(
             self,
             attributes: Dict[str, str]
@@ -109,9 +142,20 @@ class RestrictionService:
                 attribute_query[f"name.{self.language}"] = v
                 continue
 
+            if k == "ai-text":
+                continue
+
+            if k == "ai-image":
+                continue
+
             attribute_query[f"attributes.{k}"] = v
 
         item_subset = list(self.db["disposal_items"].find(attribute_query))
+
+        if "ai-text" in attributes:
+            item_subset = self.get_ai_filtered_subset(attributes["ai-text"], item_subset, False)
+        elif "ai-image" in attributes:
+            item_subset = self.get_ai_filtered_subset(attributes["ai-image"], item_subset, True)
 
         # if there is just one result we are done
         if len(item_subset) == 1:
@@ -141,7 +185,8 @@ class RestrictionService:
         if is_using_other_attributes:
             potential_attributes = other_attributes
 
-        attribute_value_count_mapping: Dict[str, Dict[str, int]] = {attr: defaultdict(int) for attr in potential_attributes}
+        attribute_value_count_mapping: Dict[str, Dict[str, int]] = {attr: defaultdict(int) for attr
+                                                                    in potential_attributes}
 
         for attr in potential_attributes:
             for item in item_subset:
@@ -159,8 +204,9 @@ class RestrictionService:
                 pass
 
         if len(attribute_scores) == 0:
-                return item_subset, None, False
+            return item_subset, None, False
 
-        best_attribute_choice = sorted(attribute_scores.items(), key=lambda x: x[1], reverse=True)[0][0]
+        best_attribute_choice = \
+            sorted(attribute_scores.items(), key=lambda x: x[1], reverse=True)[0][0]
 
         return item_subset, best_attribute_choice, is_using_other_attributes
