@@ -130,3 +130,8 @@ dmypy.json
 
 # add persistance-stuff
 persistent_data/
+
+*.csv
+
+# and vs-code
+.vscode
