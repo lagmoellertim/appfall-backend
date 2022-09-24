@@ -190,7 +190,7 @@ class RestrictionService:
             for item in item_subset:
                 try:
                     attribute_value_count_mapping[attr][item["attributes"][attr]] += 1
-                except IndexError:
+                except Exception:
                     pass
 
         attribute_scores: Dict[str, float] = {}
