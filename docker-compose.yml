@@ -18,5 +18,7 @@ services:
       dockerfile: Dockerfile
     environment:
       - DB_HOST=appfall-backend-mongo-1
+    volumes:
+      - ./persistent_data/backend/:/app/clip/
     ports:
       - "8001:8000"
