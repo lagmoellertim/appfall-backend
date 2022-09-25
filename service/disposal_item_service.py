@@ -31,7 +31,4 @@ class DisposalItemService:
             components=component_models
         )
 
-        #if "info_text" in item:
-        #    model.info_text = item["info_text"][self.language]
-
         return model

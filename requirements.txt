@@ -2,9 +2,9 @@ fastapi~=0.85.0
 pymongo~=4.2.0
 starlette~=0.20.4
 pydantic~=1.10.2
-uvicorn
-numpy
+uvicorn~=0.18.3
+numpy~=1.23.3
 git+https://github.com/openai/CLIP.git
-multilingual-clip
-torch
-python-multipart
+multilingual-clip~=1.0.10
+python-multipart~=0.0.5
+Pillow~=9.2.0

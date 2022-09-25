@@ -7,19 +7,18 @@ services:
     restart: always
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+      MONGO_INITDB_ROOT_PASSWORD: password
     volumes:
       - ./persistent_data/mongo/:/data/db
     ports:
       - "27017:27017"
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    container_name: "appfall-backend"
+    image: lagmoellertim/appfall-backend:1.2
     environment:
       - DB_HOST=appfall-backend-mongo-1
-      - LOAD_AI=true
-    volumes:
-      - ./persistent_data/backend2/:/root/.cache/
+      - PYTHONUNBUFFERED=1
+    #volumes:
+    #  - "./preloaded_cache:/root/.cache"
     ports:
       - "8001:8000"

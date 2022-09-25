@@ -1,10 +1,8 @@
 from typing import Mapping, Any, Union, List
 
-from bson import ObjectId
-from fastapi import Query
 from pymongo.database import Database
 
-from view_models import DisposalItemModel, DisposalItemComponentModel, DisposalSiteModel, \
+from view_models import DisposalSiteModel, \
     LocationModel
 
 
@@ -20,10 +18,10 @@ class DisposalSiteService:
 
         if long is not None and lat is not None:
             innerFilter = {
-                    "near": {"type": "Point", "coordinates": [long, lat]},
-                    "includeLocs": "location",
-                    "distanceField": "distance",
-                }
+                "near": {"type": "Point", "coordinates": [long, lat]},
+                "includeLocs": "location",
+                "distanceField": "distance",
+            }
             if radius is not None:
                 innerFilter["maxDistance"] = radius
 

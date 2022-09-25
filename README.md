@@ -1,2 +1,3 @@
-# appfall-backend
-Backend for the AppFall-PWA
+# AppFall-Backend
+
+AppFall Prototype Backend for MünsterHack 2022.

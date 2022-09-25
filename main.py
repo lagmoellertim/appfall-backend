@@ -1,16 +1,18 @@
+import base64
 import io
 import os
+import pathlib
 import pickle
 from typing import List, Union, Dict, Mapping, Any
 
+import clip
 import numpy
 import pymongo
-from bson import ObjectId
-from bson.binary import Binary
-import clip
 import transformers
 from PIL import Image
+from bson.binary import Binary
 from fastapi import FastAPI, Query, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from multilingual_clip import pt_multilingual_clip
 from pymongo import MongoClient
 from pymongo.database import Database
@@ -19,11 +21,7 @@ from starlette.requests import Request
 from service.disposal_item_service import DisposalItemService
 from service.disposal_site_service import DisposalSiteService
 from service.restriction_service import RestrictionService
-from view_models import DisposalSiteModel, DisposalItemModel, EventModel, QueryResultModel, \
-    AdditionalAttributeModel
-from fastapi.middleware.cors import CORSMiddleware
-
-import base64
+from view_models import DisposalSiteModel, DisposalItemModel, AdditionalAttributeModel
 
 app = FastAPI()
 app.db: Database[Mapping[str, Any]]
@@ -46,12 +44,12 @@ def extract_language_from_header(request: Request):
     try:
         language = request.headers["Accept-Language"]
         return language.split("-")[0].split(",")[0].split(";")[0]
-    except Exception:
+    except KeyError:
         return "en"
 
 
 mongo_user = os.environ.get("DB_USER") or "root"
-mongo_pass = os.environ.get("DB_PASS") or "example"
+mongo_pass = os.environ.get("DB_PASS") or "password"
 mongo_host = os.environ.get("DB_HOST") or "localhost"
 connection_string = f"mongodb://{mongo_user}:{mongo_pass}@{mongo_host}"
 
@@ -61,35 +59,32 @@ def startup_db_client():
     app.mongodb_client = MongoClient(connection_string)
     app.db = app.mongodb_client["appfall"]
     app.db["disposal_sites"].create_index([("location", pymongo.GEOSPHERE)])
-    if os.environ.get("LOAD_AI") == "true":
-        app.model = pt_multilingual_clip.MultilingualCLIP.from_pretrained(model_name
-                                                                          #,
-                                                                          #cache_dir="persistent/backend2/huggingface"
-                                                                          )
-        app.clip_model, app.clip_preprocess = clip.load(clip_model_name, device="cpu"
-                                                        #, download_root="persistent/backend2/clip"
-                                                        )
-        app.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
 
-        x = app.db["disposal_items"].find({"ai_hash": {"$exists": False}})
-        x = list(x)
+    print("Loading Multilingual Clip")
+    app.model = pt_multilingual_clip.MultilingualCLIP.from_pretrained(model_name)
+    print("Loading Clip")
+    app.clip_model, app.clip_preprocess = clip.load(clip_model_name, device="cpu")
+    print("Loading Tokenizer")
+    app.tokenizer = transformers.AutoTokenizer.from_pretrained(model_name)
+    print("AI Loading Finished")
 
-        if len(x) > 0:
-            texts = [item["name"]["en"] for item in x]
-            embeddings = app.model.forward(texts, app.tokenizer)
-            np_text_embeddings: numpy.ndarray = embeddings.detach().numpy()
+    x = list(app.db["disposal_items"].find({"ai_hash": {"$exists": False}}))
 
-            for item, ai_hash in zip(x, np_text_embeddings):
-                pickled = Binary(pickle.dumps(ai_hash, protocol=2))
-                print(item)
-                app.db["disposal_items"].update_one({"_id": item['_id']}, {"$set": {
-                    "ai_hash": pickled}})
-            print(x)
+    if len(x) > 0:
+        texts = [item["name"]["en"] for item in x]
+        embeddings = app.model.forward(texts, app.tokenizer)
+        np_text_embeddings: numpy.ndarray = embeddings.detach().numpy()
+
+        for item, ai_hash in zip(x, np_text_embeddings):
+            pickled = Binary(pickle.dumps(ai_hash, protocol=2))
+
+            app.db["disposal_items"].update_one({"_id": item['_id']}, {"$set": {
+                "ai_hash": pickled}})
 
 
 @app.on_event("shutdown")
 def shutdown_db_client():
-    app.db.close()
+    app.mongodb_client.close()
 
 
 @app.get("/restriction")
@@ -121,15 +116,6 @@ async def get_disposal_item(request: Request, item_id: str):
     return DisposalItemService(app.db, language).get_item(item_id)
 
 
-@app.get("/events", response_model=List[EventModel])
-async def get_events(
-        street: Union[str, None] = None,
-        zip: Union[int, None] = None,
-        timestamp_from: Union[int, None] = None,
-        timestamp_to: Union[int, None] = None):
-    return {}
-
-
 @app.get("/search/query", response_model=AdditionalAttributeModel)
 async def query_search(q: str = None):
     if not q:
@@ -152,8 +138,6 @@ async def image_search(file: UploadFile):
     image = app.clip_preprocess(Image.open(io.BytesIO(request_object_content))).unsqueeze(0).to(
         "cpu")
     image_features = app.clip_model.encode_image(image)[0].detach().numpy()
-
-    print(image_features)
 
     encoded_embedding = base64.b64encode(image_features)
 

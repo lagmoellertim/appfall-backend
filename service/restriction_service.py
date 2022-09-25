@@ -1,11 +1,9 @@
 import base64
 import pickle
-
-import numpy
-import numpy as np
 from collections import defaultdict
 from typing import Mapping, Any, Dict, Set, Optional, Tuple, List
 
+import numpy as np
 from pymongo.database import Database
 
 from view_models import RestrictionModel, QuestionModel, AnswerModel, \
@@ -32,8 +30,8 @@ class RestrictionService:
 
     def get_restriction(self, attributes: Dict[str, str]) -> RestrictionModel:
 
-        item_subset, next_best_attribute, is_using_other_attributes = self.get_item_subset_and_next_best_attribute(
-            attributes)
+        item_subset, next_best_attribute, is_using_other_attributes = \
+            self.get_item_subset_and_next_best_attribute(attributes)
 
         model = RestrictionModel(
             possible_disposal_items=self.get_restriction_disposable_item_model(item_subset)
@@ -118,7 +116,7 @@ class RestrictionService:
 
         min_score = 0.8
         if hash_from_image:
-            min_score = 0.3
+            min_score = 0.2
 
         return [item_subset[i] for i, sim in filtered_item_set if sim > min_score]
 
@@ -190,7 +188,7 @@ class RestrictionService:
             for item in item_subset:
                 try:
                     attribute_value_count_mapping[attr][item["attributes"][attr]] += 1
-                except Exception:
+                except KeyError:
                     pass
 
         attribute_scores: Dict[str, float] = {}
